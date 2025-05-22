@@ -198,4 +198,14 @@ public class Slot extends JFrame {
         Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
         return new ImageIcon(scaledImage);
     }
+
+    // Nuevo método para pruebas unitarias
+    public String getGameResult(Icon i1, Icon i2, Icon i3) {
+        if (i1.equals(i2) && i2.equals(i3)) {
+            return "WIN";
+        } else {
+            return "LOSE";
+        }
+    }
+
 }
