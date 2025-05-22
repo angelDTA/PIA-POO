@@ -17,7 +17,7 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
 
     public MENU() {
         this.setPreferredSize(new Dimension(700, 700));
-        this.background = new ImageIcon("src/img/menu.png").getImage();
+        this.background = new ImageIcon("src/main/resources/img/menu.png").getImage();
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
     }

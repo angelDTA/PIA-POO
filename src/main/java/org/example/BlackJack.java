@@ -35,7 +35,7 @@ public class BlackJack {
         }
 
         public String rutaImagen() {
-            return "./cards/" + toString() + ".png";
+            return "/cards/" + toString() + ".png";
         }
     }
 
