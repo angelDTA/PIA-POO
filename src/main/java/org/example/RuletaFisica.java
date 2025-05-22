@@ -58,7 +58,15 @@ public class RuletaFisica extends JPanel implements ActionListener {
         add(btn);
     }
 
+    /**
+     * Inicia la animación de la ruleta y la bola.
+     * Configura los ángulos finales de giro para ambos, asegurando que
+     * la ruleta complete vueltas completas y que la bola termine en una posición aleatoria.
+     */
+
     private void iniciar() {
+        // Evita reiniciar si ya está en marcha
+
         if (timer.isRunning()) return;
         finCorreccion = false;
 
@@ -67,14 +75,31 @@ public class RuletaFisica extends JPanel implements ActionListener {
         ruletaAngF = 6 * 2 * Math.PI; // ruleta gira 6 vueltas y termina en misma posición
         bolaAng    = 0;
         bolaAngF   = 6 * 2 * Math.PI + rnd.nextDouble() * 2 * Math.PI;
+
+        //donde empieza la pelota en este caso el borde
         bolaRad    = radioExterior;
 
         timer.start();
     }
 
+    /**
+     * Función de desaceleración cúbica (ease-out cubic).
+     * Modela un frenado suave hacia el final del movimiento.
+     *
+     * @param t Progreso normalizado entre 0 y 1.
+     * @return Valor ajustado del progreso para un efecto de desaceleración.
+     */
     private static double easeOut(double t) {
         return 1 - Math.pow(1 - t, 3);
     }
+
+    /**
+     * Función de rebote (ease-out bounce).
+     * Simula el efecto de rebote de la bola al frenar.
+     *
+     * @param t Progreso normalizado entre 0 y 1.
+     * @return Valor ajustado con rebote para un efecto más realista.
+     */
 
     private static double easeOutBounce(double t){
         if (t < 4/11.0)        return (121*t*t)/16;
@@ -100,6 +125,8 @@ public class RuletaFisica extends JPanel implements ActionListener {
         repaint();
     }
 
+    // Calcula la diferencia angular entre la bola y la ruleta (ajustada por un offset),
+    // normalizándola al rango [0, 2π), para alinear la bola con la sección correspondiente de la ruleta.
     private void alinearBolaASeccion() {
         double tamañoSector = 2 * Math.PI / SECTORES;
         double diff = (bolaAng - ruletaAng - OFFSET_IMG) % (2 * Math.PI);
@@ -131,12 +158,14 @@ public class RuletaFisica extends JPanel implements ActionListener {
         Graphics2D g2 = (Graphics2D) g.create();
 
         if (centro == null) {
-            centro        = new Point2D.Double(getWidth() / 2.0, img.getHeight() / 2.0);
+            centro = new Point2D.Double(getWidth() / 2.0, img.getHeight() / 2.0);
             radioExterior = img.getWidth() / 2.0 * 0.96;
-            radioSurco    = img.getWidth() / 2.0 * FACTOR_SURCO;
-            bolaRad       = radioExterior;
+            radioSurco = img.getWidth() / 2.0 * FACTOR_SURCO;
+            bolaRad = radioExterior;
         }
 
+        // Aplica una rotación al contexto gráfico alrededor del centro de la ruleta para dibujar la imagen girada,
+        // luego restaura la transformación original para no afectar el resto del dibujo.
         AffineTransform old = g2.getTransform();
         g2.translate(centro.getX(), centro.getY());
         g2.rotate(ruletaAng);
@@ -146,11 +175,12 @@ public class RuletaFisica extends JPanel implements ActionListener {
         double bx = centro.getX() + bolaRad * Math.sin(bolaAng);
         double by = centro.getY() - bolaRad * Math.cos(bolaAng);
 
+        //Aqui se calcula el tamaño de la bola y lo modificamos para que sea mas pequeña que la ruleta
         if (imgPelota != null) {
             double escala = 0.03;
             int bolaW = (int) (imgPelota.getWidth() * escala);
             int bolaH = (int) (imgPelota.getHeight() * escala);
-            g2.drawImage(imgPelota, (int) bx - bolaW / 2, (int) by - bolaH / 2, bolaW, bolaH, this);
+            g2.drawImage(imgPelota, (int) bx - bolaW / 2, (int) by - bolaH / 2, bolaW, bolaH, this);        // Dibuja la bola centrada en las coordenadas calculadas (bx, by)
         }
 
         g2.dispose();

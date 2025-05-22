@@ -72,6 +72,7 @@ public class BlackJack {
             public void paint(Graphics g) {
                 super.paint(g);
 
+                //Estos metodos sirven para dibujar las cartas tanto del dealer como del jugador, tambien dibuja la carta oculta del dealer
                 try {
                     Image cartaOcultaIm = new ImageIcon(getClass().getResource("/cards/BACK.png")).getImage();
                     if (!stayButtton.isEnabled()) {
@@ -114,7 +115,6 @@ public class BlackJack {
                         partidaTerminada = true;
                         resetButton.setEnabled(true);
 
-                        // Mostrar JOptionPane al final
                         SwingUtilities.invokeLater(() -> {
                             JOptionPane.showMessageDialog(frame, mensajeFinal, "Resultado", JOptionPane.INFORMATION_MESSAGE);
                         });
@@ -238,6 +238,8 @@ public class BlackJack {
         }
     }
 
+    //en ester metodo ajuta el valor de las ases si el valor supera 21
+
     public int redAceJd() {
         while (jugadorSum > 21 && jugadorACE > 0) {
             jugadorSum -= 10;
@@ -245,7 +247,7 @@ public class BlackJack {
         }
         return jugadorSum;
     }
-
+    //en ester caso lo mismo pero apra el dealer
     public int redAceD() {
         while (dealerSum > 21 && dealerACE > 0) {
             dealerSum -= 10;

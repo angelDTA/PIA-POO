@@ -145,6 +145,14 @@ public class Slot extends JFrame {
         return label;
     }
 
+
+
+    /* Inicia la animación de giro de los rodillos de una máquina tragamonedas.
+     Utiliza un temporizador para cambiar periódicamente los símbolos mostrados en los
+     tres slots, simulando un efecto de giro. El giro se detiene automáticamente
+     después de un número definido de repeticiones y luego evalúa el resultado.
+     Detiene también el sonido del giro si está activo.
+     */
     private void startSpinAnimation() {
         spinTimer = new Timer(100, e -> {
             ImageIcon icon1 = randomSymbol();
@@ -193,6 +201,9 @@ public class Slot extends JFrame {
         }
     }
 
+    /**
+     * @param path Ruta de la iamgen que se desea cargar
+     */
     private ImageIcon getScaledIcon(String path) {
         ImageIcon originalIcon = new ImageIcon(path);
         Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);

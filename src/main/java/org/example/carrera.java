@@ -28,6 +28,7 @@ class Hilo implements Runnable {
         int retardo;
 
         try {
+            //en esta parte configuramos la velocidad para que sea aleatoria y simule movimiento
             retardo = (int)(Math.random() * 5) + 1;
             labelfinal.setVisible(false);
             personaje.setVisible(true);
@@ -111,6 +112,8 @@ class Ventana extends JFrame {
         botonjInicio.setFocusPainted(false);
         botonjInicio.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        //Aqui es la accion al pulsar el boton reinicia la carrera y lanza los hilos
+
         botonjInicio.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -142,6 +145,7 @@ class Ventana extends JFrame {
 
         setVisible(true);
     }
+    // Se llama cada vez que un corredor termina. Cuando los tres han terminado, se habilita de nuevo el botón.
 
     public synchronized void carrilTerminado() {
         corredoresTerminados++;
