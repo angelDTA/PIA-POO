@@ -17,9 +17,9 @@ public class RuletaFisica extends JPanel implements ActionListener {
 
     private static final String  IMG_PATH     = "/ruleta/RULETA.png";
     private static final String  BOLA_PATH    = "/ruleta/bola.png";
-    private static final int     FPS          = 60;
-    private static final int     DUR_MS       = 7000;
-    private static final double  FACTOR_SURCO = 0.65;
+    private static final int     FPS          = 60; //cantidad de cuadros por segundo con que se actualiza la animación.
+    private static final int     DUR_MS       = 7000; //la duracion total de giro de la ruleta en este caso en milisegundos
+    private static final double  FACTOR_SURCO = 0.65; //aqui se determina donde cae la pelota
     private static final double  OFFSET_IMG   = 0;
 
     private Clip clipGiro;
@@ -123,13 +123,13 @@ public class RuletaFisica extends JPanel implements ActionListener {
             return;
         }
 
-        finCorreccion = false;
-        t0 = System.currentTimeMillis();
+        finCorreccion = false; //Indica que aún no se ha corregido la posición final de la bola
+        t0 = System.currentTimeMillis(); //Inidica el tiempo en que la animacion a empezado
 
-        ruletaAngF = 6 * 2 * Math.PI;
-        bolaAng    = 0;
-        bolaAngF   = 6 * 2 * Math.PI + rnd.nextDouble() * 2 * Math.PI;
-        bolaRad    = radioExterior;
+        ruletaAngF = 6 * 2 * Math.PI; //Aqui se indica las vueltas que tiene que dar la ruleta
+        bolaAng    = 0; //la bola se posiciona en 0
+        bolaAngF   = 6 * 2 * Math.PI + rnd.nextDouble() * 2 * Math.PI; //Aqui indicamos cuantas veces queremos que la bola gire mas uno aleatorio
+        bolaRad    = radioExterior; //aqui definimos la distancia de la bola al exterior
         reproducirMusicaGiro();
         timer.start();
     }
@@ -156,30 +156,43 @@ public class RuletaFisica extends JPanel implements ActionListener {
         if (t >= 1 && !finCorreccion) {
             finCorreccion = true;
             detenerMusicaGiro();
-            alinearBolaASeccion();
-            anunciarGanador();
+            alinearBolaASeccion(); //Ajusta la bola al centro de un sector
+            anunciarGanador();// Determina el número ganador
             timer.stop();
         }
         repaint();
     }
 
     private void alinearBolaASeccion() {
+        // Calculamos cuánto mide cada sector en radianes
         double tamañoSector = 2 * Math.PI / SECTORES;
+
+        // Obtenemos la diferencia angular entre la bola y la ruleta ajustada por el offset
         double diff = (bolaAng - ruletaAng - OFFSET_IMG) % (2 * Math.PI);
         if (diff < 0) diff += 2 * Math.PI;
 
+        // Determinamos a qué sector pertenece esta diferencia
         int indice = (int) Math.round(diff / tamañoSector) % SECTORES;
+
+        // Ajustamos el ángulo de la bola para centrarla en el sector correspondiente
         bolaAng = ruletaAng + OFFSET_IMG + indice * tamañoSector;
     }
 
     private void anunciarGanador() {
+        // Calculamos el tamaño de un sector en radianes
         double tamañoSector = 2 * Math.PI / SECTORES;
+
+        // Calculamos el ángulo relativo entre la posición de la bola y la ruleta
         double angRelativo = (bolaAng - ruletaAng) % (2 * Math.PI);
         if (angRelativo < 0) angRelativo += 2 * Math.PI;
 
+        // Determinamos el índice del sector en el que cayó la bola
         int indice = (int) Math.round(angRelativo / tamañoSector) % SECTORES;
+
+        // Usamos ese índice para obtener el número real de la ruleta según el orden físico
         int numeroGanador = NUMEROS[indice];
 
+        // Mostramos el resultado y evaluamos si el jugador ganó
         System.out.println("Número ganador: " + numeroGanador);
 
         String colorGanador = obtenerColor(numeroGanador);
@@ -196,6 +209,7 @@ public class RuletaFisica extends JPanel implements ActionListener {
             JOptionPane.showMessageDialog(this, "No ganaste esta vez.", "Resultado", JOptionPane.INFORMATION_MESSAGE);
         }
 
+        // Reiniciamos la apuesta
         montoApuesta = 0;
         tipoApuesta = null;
         numeroApostado = -1;

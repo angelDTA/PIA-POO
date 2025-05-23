@@ -10,7 +10,7 @@ public class BlackJack {
 
     boolean juegoActivo = false;
 
-    private class Carta {
+    public class Carta {
         String valor;
         String tipo;
 
