@@ -19,8 +19,8 @@ public class Slot extends JFrame {
     int spinCount = 0;
     int maxSpins = 30;
     Random rand = new Random();
-    Clip backgroundMusic;
     Clip spinSound;
+    double apuestaActual = 0;
 
     public Slot() {
         setTitle("🎰 Mini Slot");
@@ -52,10 +52,8 @@ public class Slot extends JFrame {
         // Crear los slots
         slot1 = createStyledSlot(slotColor);
         slot1.setBounds(281, 335, 150, 290);
-
         slot2 = createStyledSlot(slotColor);
         slot2.setBounds(432, 335, 140, 290);
-
         slot3 = createStyledSlot(slotColor);
         slot3.setBounds(572, 335, 140, 290);
 
@@ -73,21 +71,31 @@ public class Slot extends JFrame {
             Font customFont = Font.createFont(Font.TRUETYPE_FONT, new File("src/main/resources/casino.ttf")).deriveFont(40f);
             resultLabel.setFont(customFont);
         } catch (FontFormatException | IOException e) {
-            e.printStackTrace();
             resultLabel.setFont(new Font("Arial Black", Font.BOLD, 36));
         }
 
         background.add(resultLabel);
 
-        JLabel invisibleButton = new JLabel();
-        invisibleButton.setBounds(430, 710, 160, 60);
-        invisibleButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        invisibleButton.setOpaque(false);
+        JLabel spinButton = new JLabel();
+        spinButton.setBounds(430, 710, 160, 60);
+        spinButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        spinButton.setOpaque(false);
 
-        invisibleButton.addMouseListener(new MouseAdapter() {
+        spinButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (spinTimer != null && spinTimer.isRunning()) return;
+
+                if (apuestaActual <= 0) {
+                    JOptionPane.showMessageDialog(null, "Primero realiza una apuesta.");
+                    return;
+                }
+
+                if (!Saldo.descontar(apuestaActual)) {
+                    JOptionPane.showMessageDialog(null, "Saldo insuficiente para seguir apostando.");
+                    return;
+                }
+
                 spinCount = 0;
                 resultLabel.setText("");
                 startSpinAnimation();
@@ -95,14 +103,26 @@ public class Slot extends JFrame {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                invisibleButton.setToolTipText("¡Girar! 🎰");
+                spinButton.setToolTipText("¡Girar! 🎰");
             }
         });
 
-        background.add(invisibleButton);
+        background.add(spinButton);
+
+        JButton apostarBtn = new JButton("Apostar 💰");
+        apostarBtn.setBounds(840, 20, 140, 40);
+        apostarBtn.addActionListener(e -> {
+            ApuestaGUI apuestaGUI = new ApuestaGUI(this);
+            apuestaGUI.setVisible(true);
+        });
+        background.add(apostarBtn);
 
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    public void setApuesta(double monto) {
+        this.apuestaActual = monto;
     }
 
     private Clip playSound(String path, boolean loop) {
@@ -117,9 +137,7 @@ public class Slot extends JFrame {
             clip.open(audioIn);
             clip.start();
 
-            if (loop) {
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-            }
+            if (loop) clip.loop(Clip.LOOP_CONTINUOUSLY);
 
             if (durationMs > 0) {
                 new Timer(durationMs, e -> {
@@ -130,7 +148,6 @@ public class Slot extends JFrame {
 
             return clip;
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -145,8 +162,6 @@ public class Slot extends JFrame {
         return label;
     }
 
-
-
     /* Inicia la animación de giro de los rodillos de una máquina tragamonedas.
      Utiliza un temporizador para cambiar periódicamente los símbolos mostrados en los
      tres slots, simulando un efecto de giro. El giro se detiene automáticamente
@@ -159,18 +174,14 @@ public class Slot extends JFrame {
             ImageIcon icon2 = randomSymbol();
             ImageIcon icon3 = randomSymbol();
 
-            if (icon1 != null && icon2 != null && icon3 != null) {
-                slot1.setIcon(icon1);
-                slot2.setIcon(icon2);
-                slot3.setIcon(icon3);
-            }
+            slot1.setIcon(icon1);
+            slot2.setIcon(icon2);
+            slot3.setIcon(icon3);
+
             spinCount++;
             if (spinCount >= maxSpins) {
                 spinTimer.stop();
-                if (spinSound != null) {
-                    spinSound.stop();
-                }
-
+                if (spinSound != null) spinSound.stop();
                 checkResult();
             }
         });
@@ -178,7 +189,8 @@ public class Slot extends JFrame {
         if (spinSound != null && spinSound.isRunning()) {
             spinSound.stop();
         }
-        spinSound = playSound("src/sonidos/play.wav", true);
+
+        spinSound = playSound("src/main/resources/sonidos/play.wav", true);
         spinTimer.start();
     }
 
@@ -190,33 +202,33 @@ public class Slot extends JFrame {
         Icon s1 = slot1.getIcon();
         Icon s2 = slot2.getIcon();
         Icon s3 = slot3.getIcon();
+
         if (s1.equals(s2) && s2.equals(s3)) {
-            resultLabel.setText("🎉 ¡GANASTE!");
+            double multiplicador = 1.5;
+
+            if (s1.toString().contains("campana")) multiplicador = 2.0;
+            else if (s1.toString().contains("diamante")) multiplicador = 3.0;
+            else if (s1.toString().contains("siete")) multiplicador = 5.0;
+
+            double ganancia = apuestaActual * multiplicador;
+            Saldo.agregarGanancia(ganancia);
+
+            resultLabel.setText("🎉 ¡GANASTE! +" + String.format("$%.2f", ganancia));
             resultLabel.setForeground(Color.GREEN);
-            playSound("src/sonidos/ganar.wav", false, 3000); // Solo 3 segundos
+            playSound("src/main/resources/sonidos/ganar.wav", false, 3000);
         } else {
             resultLabel.setText("😢 Intenta de nuevo.");
-            resultLabel.setForeground(Color.black);
-            playSound("src/sonidos/pierde.wav", false);
+            resultLabel.setForeground(Color.BLACK);
+            playSound("src/main/resources/sonidos/pierde.wav", false);
         }
     }
 
     /**
-     * @param path Ruta de la iamgen que se desea cargar
+     * @param path Ruta de la imagen que se desea cargar
      */
     private ImageIcon getScaledIcon(String path) {
         ImageIcon originalIcon = new ImageIcon(path);
         Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
         return new ImageIcon(scaledImage);
     }
-
-    // Nuevo método para pruebas unitarias
-    public String getGameResult(Icon i1, Icon i2, Icon i3) {
-        if (i1.equals(i2) && i2.equals(i3)) {
-            return "WIN";
-        } else {
-            return "LOSE";
-        }
-    }
-
 }

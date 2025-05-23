@@ -9,7 +9,6 @@ public class RecargarSaldoGUI extends JFrame {
     private JLabel saldoLabel;
     private JTextField montoField;
     private JButton recargarButton;
-    private double saldo = 0.0;
 
     public RecargarSaldoGUI() {
         setTitle("Recargar Saldo");
@@ -21,7 +20,7 @@ public class RecargarSaldoGUI extends JFrame {
         panelCentral.setLayout(new BoxLayout(panelCentral, BoxLayout.Y_AXIS));
         panelCentral.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        saldoLabel = new JLabel("Saldo actual: $0.00");
+        saldoLabel = new JLabel("Saldo actual: " + Saldo.getSaldo());
         saldoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         saldoLabel.setFont(new Font("SansSerif", Font.PLAIN, 16));
 
@@ -43,6 +42,7 @@ public class RecargarSaldoGUI extends JFrame {
             }
         });
 
+
         panelCentral.add(saldoLabel);
         panelCentral.add(Box.createRigidArea(new Dimension(0, 15)));
         panelCentral.add(montoLabel);
@@ -61,12 +61,13 @@ public class RecargarSaldoGUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "El monto debe ser mayor a cero.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            saldo += monto;
-            saldoLabel.setText(String.format("Saldo actual: $%.2f", saldo));
+            Saldo.recargar(monto);
+            saldoLabel.setText(String.format("Saldo actual: $%.2f", Saldo.getSaldo()));
             montoField.setText("");
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Por favor ingresa un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
 }

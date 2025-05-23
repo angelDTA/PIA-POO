@@ -41,6 +41,8 @@ class Hilo implements Runnable {
             personaje.setVisible(false);
             labelfinal.setText(nombre + " ha llegado en la posición: " + lugar);
             labelfinal.setVisible(true);
+            ventana.posiciones[lugar - 1] = nombre;
+
             lugar++;
 
             ventana.carrilTerminado();
@@ -54,13 +56,15 @@ class Hilo implements Runnable {
 class Ventana extends JFrame {
     JButton botonjInicio;
     int corredoresTerminados = 0;
+    public int apuestaCarro = -1;
+    public double montoApostado = 0;
+    String[] posiciones = new String[3];
 
     public Ventana() {
         super("Carrera de caballos");
 
         setSize(1000, 450);
         setLayout(null);
-
 
         JLabel background = new JLabel(new ImageIcon("src/main/resources/carrera/pista.png"));
         background.setBounds(0, 0, 1000, 400);
@@ -113,12 +117,12 @@ class Ventana extends JFrame {
         botonjInicio.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         //Aqui es la accion al pulsar el boton reinicia la carrera y lanza los hilos
-
         botonjInicio.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Hilo.lugar = 1;
                 corredoresTerminados = 0;
+                posiciones = new String[3];
                 botonjInicio.setEnabled(false);
 
                 C1.setLocation(50, C1.getY());
@@ -135,23 +139,67 @@ class Ventana extends JFrame {
             }
         });
 
-        background.add(C1);
-        background.add(C1_pos);
-        background.add(C2);
-        background.add(C2_pos);
-        background.add(C3);
-        background.add(C3_pos);
+        JButton botonApostar = new JButton();
+        botonApostar.setBounds(530, 350, 280, 40);
+        botonApostar.setOpaque(false);
+        botonApostar.setContentAreaFilled(false);
+        botonApostar.setBorderPainted(false);
+        botonApostar.setFocusPainted(false);
+        botonApostar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        botonApostar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new CarreraApostarGUI(Ventana.this);
+            }
+        });
+
+        background.add(C1); background.add(C1_pos);
+        background.add(C2); background.add(C2_pos);
+        background.add(C3); background.add(C3_pos);
         background.add(botonjInicio);
+        background.add(botonApostar);
 
         setVisible(true);
     }
-    // Se llama cada vez que un corredor termina. Cuando los tres han terminado, se habilita de nuevo el botón.
 
+    // Se llama cada vez que un corredor termina. Cuando los tres han terminado, se habilita de nuevo el botón.
     public synchronized void carrilTerminado() {
         corredoresTerminados++;
+
         if (corredoresTerminados == 3) {
             botonjInicio.setEnabled(true);
+
+            // Verificar resultado de la apuesta
+            if (apuestaCarro != -1 && montoApostado > 0) {
+                String carroApostado = "C" + (apuestaCarro + 1);
+
+                if (posiciones[0].equals(carroApostado)) {
+                    double ganancia = montoApostado * 3;
+                    Saldo.agregarGanancia(ganancia);
+                    JOptionPane.showMessageDialog(this,
+                            "¡Felicidades! Tu coche " + carroApostado + " ganó.\nGanaste $" + ganancia,
+                            "¡Ganaste!", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Lo siento, tu coche " + carroApostado + " no ganó.\nPerdiste $" + montoApostado,
+                            "Perdiste", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            montoApostado = 0;
+            apuestaCarro = -1;
+            posiciones = new String[3];
         }
     }
 
+    public void setApuesta(int carro, double monto) {
+        this.apuestaCarro = carro;
+        this.montoApostado = monto;
+        System.out.println("Apuesta al coche C" + (carro + 1) + " por $" + monto);
+    }
+
+    public static void main(String[] args) {
+        new Ventana();
+    }
 }

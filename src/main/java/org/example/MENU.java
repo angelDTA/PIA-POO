@@ -38,7 +38,18 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
         if (blackjackRect.contains(x, y)) {
             BlackJack blackjack = new BlackJack();
         } else if (ruletaRect.contains(x, y)) {
-            RuletaFisica.RuletaVentana.main(null);
+            try {
+                RuletaFisica ruleta = new RuletaFisica();
+                JFrame ventanaRuleta = new JFrame("Ruleta");
+                ventanaRuleta.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                ventanaRuleta.setContentPane(ruleta);
+                ventanaRuleta.pack();
+                ventanaRuleta.setLocationRelativeTo(null);
+                ventanaRuleta.setVisible(true);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Error al abrir la ruleta: " + ex.getMessage());
+            }
         } else if (tragamonedasRect.contains(x, y)) {
             Slot slot = new Slot();
         } else if (caballosRect.contains(x, y)) {

@@ -37,6 +37,10 @@ public class RuletaFisica extends JPanel implements ActionListener {
     private double  radioSurco;
     private double  ruletaAng, bolaAng, bolaRad;
 
+    private double montoApuesta = 0;
+    private String tipoApuesta = null;
+    private int numeroApostado = -1;
+
     public RuletaFisica() throws Exception {
         try (var in = getClass().getResourceAsStream(IMG_PATH)) {
             if (in == null) throw new IllegalStateException("No se encontró " + IMG_PATH);
@@ -48,58 +52,64 @@ public class RuletaFisica extends JPanel implements ActionListener {
             imgPelota = ImageIO.read(inPelota);
         }
 
-        setPreferredSize(new Dimension(img.getWidth(), img.getHeight() + 80));
+        setPreferredSize(new Dimension(img.getWidth(), img.getHeight() + 110));
         setBackground(Color.WHITE);
         setLayout(null);
 
-        JButton btn = new JButton("GIRAR");
-        btn.addActionListener(e -> iniciar());
-        btn.setBounds((img.getWidth() - 100) / 2, img.getHeight() + 10, 100, 40);
-        add(btn);
+        JButton btnGirar = new JButton("GIRAR");
+        btnGirar.addActionListener(e -> iniciar());
+        btnGirar.setBounds((img.getWidth() - 100) / 2, img.getHeight() + 10, 100, 40);
+        add(btnGirar);
+
+        JButton btnApostar = new JButton("APOSTAR");
+        btnApostar.setBounds((img.getWidth() - 100) / 2, img.getHeight() + 60, 100, 40);
+        btnApostar.addActionListener(e -> abrirGUIApuesta());
+        add(btnApostar);
     }
 
-    /**
-     * Inicia la animación de la ruleta y la bola.
-     * Configura los ángulos finales de giro para ambos, asegurando que
-     * la ruleta complete vueltas completas y que la bola termine en una posición aleatoria.
-     */
+    private void abrirGUIApuesta() {
+        SwingUtilities.invokeLater(() -> {
+            new RuletaApuestaGUI(this).setVisible(true);
+        });
+    }
+
+    public void setApuesta(double monto, String tipo, int numero) {
+        this.montoApuesta = monto;
+        this.tipoApuesta = tipo;
+        this.numeroApostado = numero;
+        System.out.println("Apuesta recibida: $" + monto + ", tipo: " + tipo + ", numero: " + numero);
+    }
 
     private void iniciar() {
-        // Evita reiniciar si ya está en marcha
+        if (timer.isRunning()) {
+            JOptionPane.showMessageDialog(this, "La ruleta ya está girando.", "Atención", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        if (timer.isRunning()) return;
+        if (montoApuesta <= 0 || tipoApuesta == null) {
+            JOptionPane.showMessageDialog(this, "Por favor, realiza una apuesta antes de girar.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (!Saldo.descontar(montoApuesta)) {
+            JOptionPane.showMessageDialog(this, "Saldo insuficiente para esa apuesta.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         finCorreccion = false;
-
         t0 = System.currentTimeMillis();
 
-        ruletaAngF = 6 * 2 * Math.PI; // ruleta gira 6 vueltas y termina en misma posición
+        ruletaAngF = 6 * 2 * Math.PI;
         bolaAng    = 0;
         bolaAngF   = 6 * 2 * Math.PI + rnd.nextDouble() * 2 * Math.PI;
-
-        //donde empieza la pelota en este caso el borde
         bolaRad    = radioExterior;
 
         timer.start();
     }
 
-    /**
-     * Función de desaceleración cúbica (ease-out cubic).
-     * Modela un frenado suave hacia el final del movimiento.
-     *
-     * @param t Progreso normalizado entre 0 y 1.
-     * @return Valor ajustado del progreso para un efecto de desaceleración.
-     */
     private static double easeOut(double t) {
         return 1 - Math.pow(1 - t, 3);
     }
-
-    /**
-     * Función de rebote (ease-out bounce).
-     * Simula el efecto de rebote de la bola al frenar.
-     *
-     * @param t Progreso normalizado entre 0 y 1.
-     * @return Valor ajustado con rebote para un efecto más realista.
-     */
 
     private static double easeOutBounce(double t){
         if (t < 4/11.0)        return (121*t*t)/16;
@@ -125,8 +135,6 @@ public class RuletaFisica extends JPanel implements ActionListener {
         repaint();
     }
 
-    // Calcula la diferencia angular entre la bola y la ruleta (ajustada por un offset),
-    // normalizándola al rango [0, 2π), para alinear la bola con la sección correspondiente de la ruleta.
     private void alinearBolaASeccion() {
         double tamañoSector = 2 * Math.PI / SECTORES;
         double diff = (bolaAng - ruletaAng - OFFSET_IMG) % (2 * Math.PI);
@@ -142,15 +150,66 @@ public class RuletaFisica extends JPanel implements ActionListener {
         if (angRelativo < 0) angRelativo += 2 * Math.PI;
 
         int indice = (int) Math.round(angRelativo / tamañoSector) % SECTORES;
-        int numero = NUMEROS[indice];
+        int numeroGanador = NUMEROS[indice];
 
-        System.out.println("Índice: " + indice + "  Número: " + numero);
+        System.out.println("Número ganador: " + numeroGanador);
+
+        String colorGanador = obtenerColor(numeroGanador);
 
         JOptionPane.showMessageDialog(this,
-                "¡Ganó el número " + numero + "!",
+                "¡Ganó el número " + numeroGanador + " (" + colorGanador + ")!",
                 "Resultado", JOptionPane.INFORMATION_MESSAGE);
+
+        double ganancia = calcularPago(numeroGanador, colorGanador);
+        if (ganancia > 0) {
+            Saldo.agregarGanancia(ganancia);
+            JOptionPane.showMessageDialog(this, String.format("¡Ganaste $%.2f!", ganancia), "Ganancia", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "No ganaste esta vez.", "Resultado", JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        montoApuesta = 0;
+        tipoApuesta = null;
+        numeroApostado = -1;
     }
 
+    private String obtenerColor(int numero) {
+        if (numero == 0) return "verde";
+
+        int[] rojos = {32, 19, 21, 25, 34, 27, 36, 30, 23, 5, 16, 1, 14, 9, 18, 7, 12, 3, 20, 29};
+        for (int r : rojos) {
+            if (r == numero) return "rojo";
+        }
+        return "negro";
+    }
+
+    private double calcularPago(int numeroGanador, String colorGanador) {
+        if (tipoApuesta == null) return 0;
+
+        switch (tipoApuesta) {
+            case "numero":
+                if (numeroGanador == numeroApostado) {
+                    return montoApuesta * 35;
+                }
+                break;
+            case "rojo":
+                if ("rojo".equals(colorGanador)) {
+                    return montoApuesta * 2;
+                }
+                break;
+            case "negro":
+                if ("negro".equals(colorGanador)) {
+                    return montoApuesta * 2;
+                }
+                break;
+            case "verde":
+                if ("verde".equals(colorGanador)) {
+                    return montoApuesta * 35;
+                }
+                break;
+        }
+        return 0;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -158,14 +217,12 @@ public class RuletaFisica extends JPanel implements ActionListener {
         Graphics2D g2 = (Graphics2D) g.create();
 
         if (centro == null) {
-            centro = new Point2D.Double(getWidth() / 2.0, img.getHeight() / 2.0);
+            centro        = new Point2D.Double(getWidth() / 2.0, img.getHeight() / 2.0);
             radioExterior = img.getWidth() / 2.0 * 0.96;
-            radioSurco = img.getWidth() / 2.0 * FACTOR_SURCO;
-            bolaRad = radioExterior;
+            radioSurco    = img.getWidth() / 2.0 * FACTOR_SURCO;
+            bolaRad       = radioExterior;
         }
 
-        // Aplica una rotación al contexto gráfico alrededor del centro de la ruleta para dibujar la imagen girada,
-        // luego restaura la transformación original para no afectar el resto del dibujo.
         AffineTransform old = g2.getTransform();
         g2.translate(centro.getX(), centro.getY());
         g2.rotate(ruletaAng);
@@ -175,31 +232,18 @@ public class RuletaFisica extends JPanel implements ActionListener {
         double bx = centro.getX() + bolaRad * Math.sin(bolaAng);
         double by = centro.getY() - bolaRad * Math.cos(bolaAng);
 
-        //Aqui se calcula el tamaño de la bola y lo modificamos para que sea mas pequeña que la ruleta
         if (imgPelota != null) {
             double escala = 0.03;
             int bolaW = (int) (imgPelota.getWidth() * escala);
             int bolaH = (int) (imgPelota.getHeight() * escala);
-            g2.drawImage(imgPelota, (int) bx - bolaW / 2, (int) by - bolaH / 2, bolaW, bolaH, this);        // Dibuja la bola centrada en las coordenadas calculadas (bx, by)
+            g2.drawImage(imgPelota, (int) (bx - bolaW / 2), (int) (by - bolaH / 2), bolaW, bolaH, this);
         }
 
         g2.dispose();
-    }
-    public class RuletaVentana {
-        public static void main(String[] args) {
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    JFrame f = new JFrame("Ruleta física");
-                    f.setContentPane(new RuletaFisica());
-                    f.pack();
-                    f.setLocationRelativeTo(null);
-                    f.setVisible(true);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Error al iniciar la ruleta:\n" + ex.getMessage());
-                }
-            });
-        }
-    }
 
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        String saldoTexto = String.format("Saldo: $%.2f", Saldo.getSaldo());
+        g.drawString(saldoTexto, 10, getHeight() - 10);
+    }
 }
