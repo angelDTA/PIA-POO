@@ -24,7 +24,7 @@ public class Slot extends JFrame {
 
     public Slot() {
         setTitle("🎰 Mini Slot");
-        setSize(1024, 1024);
+        setSize(800, 700);  // Tamaño reducido para laptop
         setLayout(null);
         setResizable(false);
 
@@ -36,26 +36,26 @@ public class Slot extends JFrame {
                 getScaledIcon("src/main/resources/img/campana.png"),
         };
 
-        // Fondo
-        JLabel background = new JLabel(new ImageIcon("src/main/resources/img/SLOT.png"));
-        background.setBounds(0, 0, 1024, 1024);
+        // Fondo principal escalado
+        JLabel background = new JLabel(getScaledIcon("src/main/resources/img/SLOT.png", 800, 700));
+        background.setBounds(0, 0, 800, 700);
         background.setLayout(null);
         add(background);
 
-        JLabel fondo = new JLabel(new ImageIcon("src/main/resources/img/Fondo.png"));
-        fondo.setBounds(0, 0, 1024, 1024);
+        JLabel fondo = new JLabel(getScaledIcon("src/main/resources/img/Fondo.png", 800, 700));
+        fondo.setBounds(0, 0, 800, 700);
         fondo.setLayout(null);
         add(fondo);
 
         Color slotColor = new Color(40, 40, 40);
 
-        // Crear los slots
+        // Crear los slots con posiciones y tamaños ajustados
         slot1 = createStyledSlot(slotColor);
-        slot1.setBounds(281, 335, 150, 290);
+        slot1.setBounds(205, 220, 120, 210);
         slot2 = createStyledSlot(slotColor);
-        slot2.setBounds(432, 335, 140, 290);
+        slot2.setBounds(320, 220, 120, 210);
         slot3 = createStyledSlot(slotColor);
-        slot3.setBounds(572, 335, 140, 290);
+        slot3.setBounds(440, 220, 120, 210);
 
         background.add(slot1);
         background.add(slot2);
@@ -64,20 +64,21 @@ public class Slot extends JFrame {
         // JLabel para mostrar resultado debajo de los slots
         resultLabel = new JLabel("", SwingConstants.CENTER);
         resultLabel.setForeground(Color.YELLOW);
-        resultLabel.setBounds(281, 140, 430, 50);
+        resultLabel.setBounds(160, 80, 420, 40);
 
         // Cargar fuente personalizada
         try {
-            Font customFont = Font.createFont(Font.TRUETYPE_FONT, new File("src/main/resources/casino.ttf")).deriveFont(40f);
+            Font customFont = Font.createFont(Font.TRUETYPE_FONT, new File("src/main/resources/casino.ttf")).deriveFont(32f);
             resultLabel.setFont(customFont);
         } catch (FontFormatException | IOException e) {
-            resultLabel.setFont(new Font("Arial Black", Font.BOLD, 36));
+            resultLabel.setFont(new Font("Arial Black", Font.BOLD, 30));
         }
 
         background.add(resultLabel);
 
+        // Botón para girar (spin)
         JLabel spinButton = new JLabel();
-        spinButton.setBounds(430, 710, 160, 60);
+        spinButton.setBounds(280, 480, 170, 50);
         spinButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         spinButton.setOpaque(false);
 
@@ -109,8 +110,9 @@ public class Slot extends JFrame {
 
         background.add(spinButton);
 
+        // Botón para abrir ventana de apuesta
         JButton apostarBtn = new JButton("Apostar 💰");
-        apostarBtn.setBounds(840, 20, 140, 40);
+        apostarBtn.setBounds(630, 20, 140, 40);
         apostarBtn.addActionListener(e -> {
             ApuestaGUI apuestaGUI = new ApuestaGUI(this);
             apuestaGUI.setVisible(true);
@@ -224,11 +226,20 @@ public class Slot extends JFrame {
     }
 
     /**
-     * @param path Ruta de la imagen que se desea cargar
+     * @param path Ruta de la imagen que se desea cargar, escala por defecto 100x100
      */
     private ImageIcon getScaledIcon(String path) {
+        return getScaledIcon(path, 100, 100);
+    }
+
+    /**
+     * @param path Ruta de la imagen que se desea cargar
+     * @param width ancho deseado
+     * @param height alto deseado
+     */
+    private ImageIcon getScaledIcon(String path, int width, int height) {
         ImageIcon originalIcon = new ImageIcon(path);
-        Image scaledImage = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+        Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
         return new ImageIcon(scaledImage);
     }
 }
