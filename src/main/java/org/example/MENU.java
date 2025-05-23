@@ -3,6 +3,10 @@ package org.example;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
+
 
 public class MENU extends JPanel implements MouseListener, MouseMotionListener {
 
@@ -14,12 +18,36 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
     private final Rectangle caballosRect = new Rectangle(370, 400, 250, 200);
     private final Rectangle recargarRect = new Rectangle(370, 40, 220, 40);
 
+    private Clip clip;
+    private FloatControl volumeControl;
+
+    private void reproducirMusica() {
+        try {
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
+                    getClass().getResource("/sonidos/ambiente.wav")
+            );
+            clip = AudioSystem.getClip();
+            clip.open(audioInputStream);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+            clip.start();
+
+            // Obtener control de volumen
+            if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+                volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error cargando música: " + e.getMessage());
+        }
+    }
 
     public MENU() {
         this.setPreferredSize(new Dimension(700, 700));
         this.background = new ImageIcon("src/main/resources/img/menu.png").getImage();
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
+        reproducirMusica();
     }
 
     @Override
@@ -29,6 +57,11 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
 
     }
 
+    public void setVolume(float decibels) {
+        if (volumeControl != null) {
+            volumeControl.setValue(decibels);
+        }
+    }
 
     @Override
     public void mouseClicked(MouseEvent e) {
@@ -36,8 +69,10 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
         int y = e.getY();
 
         if (blackjackRect.contains(x, y)) {
+            setVolume(-15.0f);
             BlackJack blackjack = new BlackJack();
         } else if (ruletaRect.contains(x, y)) {
+            setVolume(-15.0f);
             try {
                 RuletaFisica ruleta = new RuletaFisica();
                 JFrame ventanaRuleta = new JFrame("Ruleta");
@@ -51,8 +86,10 @@ public class MENU extends JPanel implements MouseListener, MouseMotionListener {
                 JOptionPane.showMessageDialog(null, "Error al abrir la ruleta: " + ex.getMessage());
             }
         } else if (tragamonedasRect.contains(x, y)) {
+            setVolume(-15.0f);
             Slot slot = new Slot();
         } else if (caballosRect.contains(x, y)) {
+            setVolume(-15.0f);
             Ventana ventana = new Ventana();
         }
         else if (recargarRect.contains(x, y)) {

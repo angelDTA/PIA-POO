@@ -4,6 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
 
 class Hilo implements Runnable {
     Thread hilo;
@@ -28,8 +31,7 @@ class Hilo implements Runnable {
         int retardo;
 
         try {
-            //en esta parte configuramos la velocidad para que sea aleatoria y simule movimiento
-            retardo = (int)(Math.random() * 5) + 1;
+            retardo = (int) (Math.random() * 5) + 1;
             labelfinal.setVisible(false);
             personaje.setVisible(true);
 
@@ -71,7 +73,6 @@ class Ventana extends JFrame {
         background.setLayout(null);
         add(background);
 
-        // Carro C1
         Image imagen_C1 = new ImageIcon("src/main/resources/carrera/C1.png").getImage();
         ImageIcon Icon_C1 = new ImageIcon(imagen_C1.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
         JLabel C1 = new JLabel(Icon_C1);
@@ -83,7 +84,6 @@ class Ventana extends JFrame {
         C1_pos.setForeground(Color.WHITE);
         C1_pos.setVisible(false);
 
-        // Carro C2
         Image imagen_C2 = new ImageIcon("src/main/resources/carrera/C2.png").getImage();
         ImageIcon Icon_C2 = new ImageIcon(imagen_C2.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
         JLabel C2 = new JLabel(Icon_C2);
@@ -95,7 +95,6 @@ class Ventana extends JFrame {
         C2_pos.setForeground(Color.WHITE);
         C2_pos.setVisible(false);
 
-        // Carro C3
         Image imagen_C3 = new ImageIcon("src/main/resources/carrera/C3.png").getImage();
         ImageIcon Icon_C3 = new ImageIcon(imagen_C3.getScaledInstance(50, 50, Image.SCALE_SMOOTH));
         JLabel C3 = new JLabel(Icon_C3);
@@ -107,7 +106,6 @@ class Ventana extends JFrame {
         C3_pos.setForeground(Color.WHITE);
         C3_pos.setVisible(false);
 
-        // Botón de inicio
         botonjInicio = new JButton();
         botonjInicio.setBounds(200, 350, 280, 40);
         botonjInicio.setOpaque(false);
@@ -116,26 +114,39 @@ class Ventana extends JFrame {
         botonjInicio.setFocusPainted(false);
         botonjInicio.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        //Aqui es la accion al pulsar el boton reinicia la carrera y lanza los hilos
         botonjInicio.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Hilo.lugar = 1;
-                corredoresTerminados = 0;
-                posiciones = new String[3];
                 botonjInicio.setEnabled(false);
 
-                C1.setLocation(50, C1.getY());
-                C2.setLocation(50, C2.getY());
-                C3.setLocation(50, C3.getY());
+                //aqui reproduce la musica de inicio antes de lanzar los hilos
+                new Thread(() -> {
+                    reproducirSonido("src/main/resources/sonidos/inicio.wav");
 
-                C1_pos.setVisible(false);
-                C2_pos.setVisible(false);
-                C3_pos.setVisible(false);
+                    try {
+                        Thread.sleep(4000); // Espera mientras se reproduce el sonido
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
 
-                new Hilo("C1", C1, C1_pos, Ventana.this);
-                new Hilo("C2", C2, C2_pos, Ventana.this);
-                new Hilo("C3", C3, C3_pos, Ventana.this);
+                    SwingUtilities.invokeLater(() -> {
+                        Hilo.lugar = 1;
+                        corredoresTerminados = 0;
+                        posiciones = new String[3];
+
+                        C1.setLocation(50, C1.getY());
+                        C2.setLocation(50, C2.getY());
+                        C3.setLocation(50, C3.getY());
+
+                        C1_pos.setVisible(false);
+                        C2_pos.setVisible(false);
+                        C3_pos.setVisible(false);
+
+                        new Hilo("C1", C1, C1_pos, Ventana.this);
+                        new Hilo("C2", C2, C2_pos, Ventana.this);
+                        new Hilo("C3", C3, C3_pos, Ventana.this);
+                    });
+                }).start();
             }
         });
 
@@ -163,14 +174,12 @@ class Ventana extends JFrame {
         setVisible(true);
     }
 
-    // Se llama cada vez que un corredor termina. Cuando los tres han terminado, se habilita de nuevo el botón.
     public synchronized void carrilTerminado() {
         corredoresTerminados++;
 
         if (corredoresTerminados == 3) {
             botonjInicio.setEnabled(true);
 
-            // Verificar resultado de la apuesta
             if (apuestaCarro != -1 && montoApostado > 0) {
                 String carroApostado = "C" + (apuestaCarro + 1);
 
@@ -197,6 +206,18 @@ class Ventana extends JFrame {
         this.apuestaCarro = carro;
         this.montoApostado = monto;
         System.out.println("Apuesta al coche C" + (carro + 1) + " por $" + monto);
+    }
+
+    private void reproducirSonido(String ruta) {
+        try {
+            File archivoSonido = new File(ruta);
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(archivoSonido);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            System.err.println("No se pudo reproducir el sonido: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
